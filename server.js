@@ -21,21 +21,85 @@ const app = express();
 
 2-
 
+
+- Express is a framework for managing servers 
+- AXIOS(can help express to fetch data) is a library that provides methods of (adding,editing,updating,deleting) for data fetching (usually using Api)
+- dotenv library is sensitive data storing file type 
 */
 'use  strict'
 const data = require("./Movie-Data/data.json");
 const express = require("express");
 const app = express();
+const axios = require("axios");
+require("dotenv").config()
+const api_key = process.env.API_KEY
 
+// creating the Home page
 app.get("/", (req, res) => {
     const newMovie = new Movie (data.title,data.poster_path,data.overview)
     res.json(newMovie);
 })
-    app.get("/favourite", (req, res) => {
+
+// creating Favourite page
+app.get("/favourite", (req, res) => {
         console.log("welcome to Favourite Page");
         res.send("welcome to Favourite Page");
-    })
+})
 
+// creating trending page
+app.get("/trending", (req, res) => {
+const url="https://api.themoviedb.org/3/trending/all/week?api_key=37ddc7081e348bf246a42f3be2b3dfd0&language=en-US"
+axios.get(url)
+.then(fadi => {
+const filter = fadi.data.results.map(data =>{
+    return new Movie(data.id,data.title || data.original_title || data.original_name,data.poster_path,data.release_date || data.first_air_date,data.overview)
+})
+res.json(filter)})
+
+})
+
+app.get("/search", (req, res) => {
+    const  nameMovie = req.query.name_movie;
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${api_key}&language=en-US&query=${nameMovie}&page=2`
+    axios.get(url)
+    .then(result => {
+        const search = result.data.results.map(data =>{
+             return new Movie(data.id,data.title || data.original_title || data.original_name,data.poster_path,data.release_date || data.first_air_date,data.overview)
+        })
+        res.status(200).json(search);
+    })
+    .catch(error => {
+        handleError500(error, req, res)
+    })})
+    
+    app.get("/popular", (req, res) => {
+        const url = `https://api.themoviedb.org/3/person/popular?api_key=${api_key}`
+        axios.get(url)
+        .then(result => {
+            const search = result.data.results.map(data =>{
+                 return new Movie(data.id,data.title || data.original_title || data.original_name,data.poster_path,data.release_date || data.first_air_date,data.overview)
+            })
+            res.status(200).json(search);
+        })
+        .catch(error => {
+            handleError500(error, req, res)
+        })})
+
+        app.get("/top", (req, res) => {
+            const  nameMovie = req.query.name_movie;
+            const url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${api_key}`
+            axios.get(url)
+            .then(result => {
+                const search = result.data.results.map(data =>{
+                     return new Movie(data.id,data.title || data.original_title || data.original_name,data.poster_path,data.release_date || data.first_air_date,data.overview)
+                })
+                res.status(200).json(search);
+            })
+            .catch(error => {
+                handleError500(error, req, res)
+            })})
+    
+    
 
     app.use(handleError404);
     app.use(handleError500);
@@ -46,10 +110,10 @@ app.get("/", (req, res) => {
             "responseText" : "Sorry, Page not found"
         })
     }
-    function handleError500 (req, res) {
+    function handleError500 (error, req, res) {
         res.status(500).json({
             "status" : 500,
-            "responseText" : "Sorry, something went wrong"
+            "responseText" : error
         })
     }
 
@@ -59,9 +123,11 @@ let port = 9000;
 app.listen(port, () => {
     console.log(`The server run in the port ${port}`)})
 
-    function Movie (title,poster_path,overview) {
+    function Movie (id,title,poster_path,release_date,overview) {
+        this.id = id;
         this.title = title;
         this.poster_path = poster_path;
+        this.release_date = release_date;
         this.overview = overview; 
     }
 
