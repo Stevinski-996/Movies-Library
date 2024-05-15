@@ -33,6 +33,32 @@ const app = express();
 const axios = require("axios");
 require("dotenv").config()
 const api_key = process.env.API_KEY
+const { Client } = require("pg");
+const pg_key = process.env.PG_URL
+const client = new Client(pg_key);
+app.use(express.json());
+// DB 
+app.post("/addMovie",handleAddMovie);
+app.get("/getMovie",handleGetMovie);
+
+function handleGetMovie (req, res) {
+    let sql = `Select * From Movie;`
+    client.query(sql).then(result => {
+        res.status(200).json(result.rows);
+    }).catch(error => {
+        handleError500(error, req, res);
+    })}
+
+// destructuring (saving time)
+function handleAddMovie(req, res) {
+    const {title,poster_path,release_date,overview, comment} = req.body;
+    const sql =`INSERT INTO Movie (title, poster_path, release_date, overview, comment) VALUES ($1, $2, $3, $4, $5) RETURNING *;`
+    let values = [title,poster_path,release_date,overview, comment];
+    client.query(sql, values).then(result => {
+        res.status(201).json(result.rows);
+    }).catch(error => {
+        handleError500(error, req, res);
+    })}
 
 // creating the Home page
 app.get("/", (req, res) => {
@@ -118,10 +144,12 @@ app.get("/search", (req, res) => {
     }
 
     
-
+client.connect().then(() => {
 let port = 9000;
 app.listen(port, () => {
     console.log(`The server run in the port ${port}`)})
+})
+
 
     function Movie (id,title,poster_path,release_date,overview) {
         this.id = id;
