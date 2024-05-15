@@ -40,7 +40,45 @@ app.use(express.json());
 // DB 
 app.post("/addMovie",handleAddMovie);
 app.get("/getMovie",handleGetMovie);
+app.put("/update/:id",handleUpdate);
+app.delete("/delete/:id",handleDelete);
+app.get("/getMovie/:id",handleGetMovieid)
 
+
+// Creating Get Movie EndPoint
+function handleGetMovieid (req, res) {
+    const id = req.params.id;
+    let sql = `Select * From Movie WHERE id = ${id};`
+    client.query(sql).then(result => {
+        if  (result)
+        res.status(200).json(result.rows);
+    }).catch(error => {
+        handleError500(error, req, res);
+    })}
+
+
+function handleDelete(req, res) {
+const id = req.params.id;
+let sql = `DELETE FROM Movie WHERE id=${id};`
+client.query(sql).then(result => {
+    res.status(200).send("The Movie has been deleted successfully");
+}).catch((error) => handleError500(error, req, res))
+}
+
+function handleUpdate (req, res) {
+    const id = req.params.id;
+    const { comment } = req.body;
+    const sql =`UPDATE Movie SET comment = $1 WHERE id=${id} RETURNING *;`
+    const  values = [comment];
+    client.query(sql, values).then(result => {
+        res.status(200).json(result.rows)
+    }).catch((error) => handleError500(error, req, res))
+}
+
+
+
+
+// Creating Get Movie EndPoint
 function handleGetMovie (req, res) {
     let sql = `Select * From Movie;`
     client.query(sql).then(result => {
@@ -49,7 +87,7 @@ function handleGetMovie (req, res) {
         handleError500(error, req, res);
     })}
 
-// destructuring (saving time)
+// Creating ADD Movie EndPoint - destructuring (saving time)
 function handleAddMovie(req, res) {
     const {title,poster_path,release_date,overview, comment} = req.body;
     const sql =`INSERT INTO Movie (title, poster_path, release_date, overview, comment) VALUES ($1, $2, $3, $4, $5) RETURNING *;`
