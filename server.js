@@ -36,7 +36,9 @@ const api_key = process.env.API_KEY
 const { Client } = require("pg");
 const pg_key = process.env.PG_URL
 const client = new Client(pg_key);
+const cors = require('cors');
 app.use(express.json());
+app.use(cors());
 // DB 
 app.post("/addMovie",handleAddMovie);
 app.get("/getMovie",handleGetMovie);
